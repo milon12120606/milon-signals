@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milon Boss GX™ - Live Signals</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h2 { color: #38bdf8; }
+        .alert-box { background: #7f1d1d; color: #fca5a5; padding: 15px; border-radius: 8px; margin-top: 20px; font-weight: bold; display: none; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: center; }
+        th { background: #334155; color: #cbd5e1; }
+        .call { color: #4ade80; font-weight: bold; }
+        .put { color: #f87171; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 Milon Vai Signal Panel</h2>
+    <p id="date-display">লোড হচ্ছে...</p>
+
+    <!-- 🔴 যদি ফাইল পুরনো হয় তবে এই ওয়ার্নিং দেখাবে -->
+    <div id="error-alert" class="alert-box">
+        ⚠️ সতর্কবার্তা: আজকের সিগন্যাল ফাইল এখনো আপডেট হয়নি অথবা সিগন্যালের মেয়াদ শেষ!
+    </div>
+
+    <!-- 🟢 সিগন্যাল টেবিল -->
+    <table id="signal-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th>সময়</th>
+                <th>সিগন্যাল</th>
+                <th>অ্যাকুরেসি</th>
+            </tr>
+        </thead>
+        <tbody id="signal-body">
+            <!-- ডাটা ডায়নামিক্যালি বসবে -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function loadSignals() {
+        // MT4 থেকে আপলোড হওয়া ফাইলের নাম
+        const csvUrl = 'OTC_Future_Signals_AUDJPY.csv'; 
+
+        try {
+            const response = await fetch(csvUrl + '?v=' + new Date().getTime());
+            if (!response.ok) throw new Error('ফাইল পাওয়া যায়নি!');
+            
+            const text = await response.text();
+            const rows = text.trim().split('\n');
+
+            if (rows.length < 2) {
+                showError();
+                return;
+            }
+
+            const firstDataRow = rows[1].split(',');
+            const fileDate = firstDataRow[0].trim();
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const currentDate = `${yyyy}-${mm}-${dd}`;
+
+            document.getElementById('date-display').innerText = "আজকের তারিখ: " + currentDate;
+
+            // 🔴 মেয়াদের সিকিউরিটি চেক
+            if (fileDate !== currentDate) {
+                showError();
+                return;
+            }
+
+            document.getElementById('error-alert').style.display = 'none';
+            document.getElementById('signal-table').style.display = 'table';
+
+            const tbody = document.getElementById('signal-body');
+            tbody.innerHTML = '';
+
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split(',');
+                if (cols.length >= 4) {
+                    const tr = document.createElement('tr');
+                    const signalClass = cols[2].trim() === 'CALL' ? 'call' : 'put';
+                    
+                    tr.innerHTML = `
+                        <td>${cols[0]}</td>
+                        <td>${cols[1]}</td>
+                        <td class="${signalClass}">${cols[2]}</td>
+                        <td>${cols[3]}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            }
+
+        } catch (error) {
+            showError();
+        }
+    }
+
+    function showError() {
+        document.getElementById('error-alert').style.display = 'block';
+        document.getElementById('signal-table').style.display = 'none';
+    }
+
+    loadSignals();
+</script>
+
+</body>
+</html>
